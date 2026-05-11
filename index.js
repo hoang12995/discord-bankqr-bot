@@ -1,5 +1,17 @@
 require('dotenv').config();
 
+const express = require('express');
+
+const app = express();
+
+app.get('/', (req, res) => {
+    res.send('Bot is running');
+});
+
+app.listen(3000, () => {
+    console.log('Web server online');
+});
+
 const {
     Client,
     GatewayIntentBits,
@@ -14,18 +26,18 @@ const client = new Client({
 });
 
 
-// ===========================
+// ======================================
 // THÔNG TIN NGÂN HÀNG
-// ===========================
+// ======================================
 
 const BANK_ID = "TCB";
 const ACCOUNT_NO = "19038739957018";
 const ACCOUNT_NAME = "LE DINH THANH";
 
 
-// ===========================
+// ======================================
 // BOT ONLINE
-// ===========================
+// ======================================
 
 client.once('ready', () => {
 
@@ -34,9 +46,9 @@ client.once('ready', () => {
 });
 
 
-// ===========================
+// ======================================
 // LỆNH /qr
-// ===========================
+// ======================================
 
 client.on('interactionCreate', async interaction => {
 
@@ -44,66 +56,89 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.commandName === 'qr') {
 
-        // ví dụ:
-        // /qr 50000 napgame
+        try {
 
-        const input = interaction.options.getString('input');
+            // ví dụ:
+            // /qr 50000 napgame
 
-        const args = input.split(" ");
+            const input = interaction.options.getString('input');
 
-        const amount = args[0];
+            const args = input.split(" ");
 
-        const message = args.slice(1).join(" ");
+            const amount = args[0];
 
-        // LINK QR
-        const qrUrl =
-            `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(message)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
+            const message = args.slice(1).join(" ");
 
-        // EMBED ĐẸP
-        const embed = new EmbedBuilder()
+            // LINK QR
 
-            .setTitle("💸 QR CHUYỂN KHOẢN")
+            const qrUrl =
+                `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(message)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
 
-            .setDescription(
+            // EMBED
+
+            const embed = new EmbedBuilder()
+
+                .setTitle("💸 QR CHUYỂN KHOẢN")
+
+                .setDescription(
 `🏦 Ngân hàng: ${BANK_ID}
 
 👤 Chủ tài khoản:
 ${ACCOUNT_NAME}
+
 💳 Số tài khoản:
 ${ACCOUNT_NO}
+
 💰 Số tiền:
 ${Number(amount).toLocaleString()} VNĐ
+
 📝 Nội dung:
 ${message}`
-            )
+                )
 
-            .setImage(qrUrl)
+                .setImage(qrUrl)
 
-            .setColor("#ff0000")
+                .setColor("#ff0000")
 
-            .setFooter({
-                text: "Quét QR để chuyển khoản"
+                .setFooter({
+                    text: "Quét QR để chuyển khoản"
+                });
+
+            await interaction.reply({
+
+                embeds: [embed]
+
             });
 
-        await interaction.reply({
+        } catch (error) {
 
-            embeds: [embed]
+            console.error(error);
 
-        });
+            await interaction.reply({
+
+                content: "❌ Có lỗi xảy ra",
+
+                ephemeral: true
+
+            });
+
+        }
+
     }
+
 });
 
 
-// ===========================
+// ======================================
 // LOGIN BOT
-// ===========================
+// ======================================
 
 client.login(process.env.TOKEN);
 
 
-// ===========================
+// ======================================
 // TẠO SLASH COMMAND
-// ===========================
+// ======================================
 
 const commands = [
 
@@ -116,17 +151,21 @@ const commands = [
         .addStringOption(option =>
 
             option
+
                 .setName('input')
+
                 .setDescription('Ví dụ: 50000 napgame')
+
                 .setRequired(true)
+
         )
 
 ].map(command => command.toJSON());
 
 
-// ===========================
+// ======================================
 // ĐĂNG KÝ COMMAND
-// ===========================
+// ======================================
 
 const rest = new REST({ version: '10' })
 

@@ -156,4 +156,16 @@ ${message}`
 // LOGIN
 // =====================================
 
-client.login(process.env.TOKEN);
+client.on('disconnect', () => {
+    console.log('Bot disconnected!');
+});
+
+client.on('reconnecting', () => {
+    console.log('Bot reconnecting...');
+});
+
+client.on('resume', () => {
+    console.log('Bot resumed connection');
+});
+
+client.login(process.env.TOKEN).catch(console.error);

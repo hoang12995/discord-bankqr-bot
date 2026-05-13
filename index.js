@@ -4,11 +4,11 @@ const express = require('express');
 
 const app = express();
 
+const PORT = process.env.PORT || 3000;
+
 app.get('/', (req, res) => {
     res.send('Bot is running');
 });
-
-const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`Web server online at port ${PORT}`);
@@ -28,18 +28,18 @@ const client = new Client({
 });
 
 
-// ======================================
+// =====================================
 // THÔNG TIN NGÂN HÀNG
-// ======================================
+// =====================================
 
 const BANK_ID = "TCB";
 const ACCOUNT_NO = "19038739957018";
 const ACCOUNT_NAME = "LE DINH THANH";
 
 
-// ======================================
-// BOT ONLINE
-// ======================================
+// =====================================
+// BOT READY
+// =====================================
 
 client.once('ready', () => {
 
@@ -48,9 +48,38 @@ client.once('ready', () => {
 });
 
 
-// ======================================
-// LỆNH /qr
-// ======================================
+// =====================================
+// CHỐNG CRASH
+// =====================================
+
+process.on('unhandledRejection', error => {
+    console.error('Unhandled promise rejection:', error);
+});
+
+process.on('uncaughtException', error => {
+    console.error('Uncaught exception:', error);
+});
+
+client.on('error', error => {
+    console.error('Discord client error:', error);
+});
+
+client.on('shardDisconnect', () => {
+    console.log('Bot disconnected');
+});
+
+client.on('shardReconnecting', () => {
+    console.log('Bot reconnecting...');
+});
+
+client.on('shardResume', () => {
+    console.log('Bot resumed connection');
+});
+
+
+// =====================================
+// COMMAND /qr
+// =====================================
 
 client.on('interactionCreate', async interaction => {
 
@@ -60,9 +89,6 @@ client.on('interactionCreate', async interaction => {
 
         try {
 
-            // ví dụ:
-            // /qr 50000 napgame
-
             const input = interaction.options.getString('input');
 
             const args = input.split(" ");
@@ -71,12 +97,8 @@ client.on('interactionCreate', async interaction => {
 
             const message = args.slice(1).join(" ");
 
-            // LINK QR
-
             const qrUrl =
                 `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(message)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
-
-            // EMBED
 
             const embed = new EmbedBuilder()
 
@@ -107,22 +129,21 @@ ${message}`
                 });
 
             await interaction.reply({
-
                 embeds: [embed]
-
             });
 
         } catch (error) {
 
             console.error(error);
 
-            await interaction.reply({
+            if (!interaction.replied) {
 
-                content: "❌ Có lỗi xảy ra",
+                await interaction.reply({
+                    content: "❌ Có lỗi xảy ra",
+                    ephemeral: true
+                });
 
-                ephemeral: true
-
-            });
+            }
 
         }
 
@@ -131,16 +152,16 @@ ${message}`
 });
 
 
-// ======================================
-// LOGIN BOT
-// ======================================
+// =====================================
+// LOGIN
+// =====================================
 
 client.login(process.env.TOKEN);
 
 
-// ======================================
-// TẠO SLASH COMMAND
-// ======================================
+// =====================================
+// SLASH COMMAND
+// =====================================
 
 const commands = [
 
@@ -153,11 +174,8 @@ const commands = [
         .addStringOption(option =>
 
             option
-
                 .setName('input')
-
                 .setDescription('Ví dụ: 50000 napgame')
-
                 .setRequired(true)
 
         )
@@ -165,9 +183,9 @@ const commands = [
 ].map(command => command.toJSON());
 
 
-// ======================================
-// ĐĂNG KÝ COMMAND
-// ======================================
+// =====================================
+// REGISTER COMMAND
+// =====================================
 
 const rest = new REST({ version: '10' })
 
